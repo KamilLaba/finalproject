@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/main.css}" rel="stylesheet" />
+    <title>Image Viewer</title>
+</head>
+<body>
+<ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="imageupload">Upload Image</a></li>
+    <li><a href="images">Images</a></li>
+    <li><a href="registeruser">Register</a></li>
+    <li><a href="users">Users</a></li>
+</ul>
+<h1>Image Viewer</h1>
+<p>
+    <th:block th:text="${message}">message</th:block>
+<form method="post" th:action="@{/setCurrentUser}">
+    <select class="form-control" id="userId" name="userId">
+        <option value="0">Select current user</option>
+        <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.name}"></option>
+    </select>
+    <button type="submit">Select</button>
+</form>
+</p>
+</body>
+</html>

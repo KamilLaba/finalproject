@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Register user</title>
+    <link th:href="@{/styles/main.css}" rel="stylesheet" />
+</head>
+<body>
+<ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="imageupload">Upload Image</a></li>
+    <li><a href="images">Images</a></li>
+    <li><a href="registeruser">Register</a></li>
+    <li><a href="users">Users</a></li>
+</ul>
+<section class="my-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <h2>Register user</h2>
+                <p th:text="${message}" th:if="${message ne null}" class="alert alert-primary"></p>
+                <form method="post" th:action="@{/register}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <table>
+                            <tr>
+                                <td>Name: </td>
+                                <td><input type="text" name="name" required minlength="3"/></td>
+                            </tr>
+                            <tr>
+                                <td>Password:</td>
+                                <td><input type="text" name="password" required ></input></td>
+                            </tr>
+                            <tr>
+                                <td>Role:</td>
+                                <td>
+                                    <select id="roleId" name="roleId">
+                                        <option value="1">Admin</option>
+                                        <option value="2">Standard User</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register user</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

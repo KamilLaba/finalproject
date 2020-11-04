@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/main.css}" rel="stylesheet" />
+    <title>Images</title>
+</head>
+<body>
+<ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="imageupload">Upload Image</a></li>
+    <li><a href="images">Images</a></li>
+    <li><a href="registeruser">Register</a></li>
+    <li><a href="users">Users</a></li>
+</ul>
+<h2>Images</h2>
+<th:block th:text="${message}">message</th:block>
+<table border="1">
+    <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Image</th>
+        <th>Permissions needed</th>
+    </tr>
+    <tr th:each = "image: ${images}">
+        <td th:text="${image.title}"></td>
+        <td th:text="${image.description}"></td>
+        <td><img th:src="${'data:image/jpeg;charset=utf-8;base64,' + image.image}" alt=""></td>
+        <td th:text="${image.role.role}"></td>
+        <td>
+            <form th:action="@{images/deleteImage/}" method="post">
+                <input type="hidden" name="id" th:value="${image.Id}">
+                <button type="submit" onClick="return confirm('Delete image?')">Delete</button>
+            </form>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
