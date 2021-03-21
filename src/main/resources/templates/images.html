@@ -33,6 +33,12 @@
                 <button type="submit" onClick="return confirm('Delete image?')">Delete</button>
             </form>
         </td>
+        <td>
+            <form th:action="@{images/toGrayscale/}" method="post">
+                <input type="hidden" name="id" th:value="${image.Id}">
+                <button type="submit" onClick="return confirm('Convert image to grayscale?')">Grayscale</button>
+            </form>
+        </td>
     </tr>
 </table>
 </body>

@@ -27,6 +27,11 @@ public class ImageService implements IImageService{
     }
 
     @Override
+    public Image findById(Integer id){
+        return imageRepository.findById(id).get();
+    }
+
+    @Override
     public void deleteById(Integer id){
         imageRepository.deleteById(id);
     }

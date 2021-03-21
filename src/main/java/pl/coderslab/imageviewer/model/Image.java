@@ -49,8 +49,9 @@ public class Image {
     public String getImage(){
         return Base64.getEncoder().encodeToString(image);
     }
-
-
+    public void setImage(byte[] image){
+        this.image = image;
+    }
     public String getTitle(){
         return title;
     }

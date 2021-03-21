@@ -9,4 +9,5 @@ public interface IImageService {
     List<Image> findAll();
     Image save(Image image);
     void deleteById(Integer id);
+    Image findById(Integer id);
 }
