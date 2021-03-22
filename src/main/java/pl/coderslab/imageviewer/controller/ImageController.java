@@ -64,7 +64,7 @@ public class ImageController {
     }
 
     @PostMapping("images/toGrayscale")
-    public String ToGrayscale(@RequestParam String id){
+    public String toGrayscale(@RequestParam String id){
         try {
             Image image = imageService.findById(Integer.parseInt(id));
             String imageBinaryString = image.getImage();
@@ -95,11 +95,44 @@ public class ImageController {
         return "redirect:/images";
     }
 
+    @PostMapping("images/toBlackAndWhite")
+    public String toBlackAndWhite(@RequestParam String id){
+        try {
+            Image image = imageService.findById(Integer.parseInt(id));
+            String imageBinaryString = image.getImage();
+
+            byte[] inputImage = Base64.getDecoder().decode(imageBinaryString);
+            System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(inputImage);
+            BufferedImage inputBufferedImage = ImageIO.read(byteArrayInputStream);
+
+            Mat source = bufferedImageToMat(inputBufferedImage);
+            Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
+            Imgproc.cvtColor(source, destination, Imgproc.COLOR_RGB2GRAY);
+            //(thresh, blackAndWhiteImage) = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+            byte[] data1 = new byte[destination.rows() * destination.cols() * (int) (destination.elemSize())];
+            destination.get(0, 0, data1);
+            BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), BufferedImage.TYPE_BYTE_GRAY);
+            outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ImageIO.write(outputImage, "png", byteArrayOutputStream);
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+
+            image.setImage(bytes);
+            imageService.save(image);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        return "redirect:/images";
+    }
+
     protected Mat bufferedImageToMat(BufferedImage in) {
         Mat out;
         byte[] data;
         int r, g, b;
-        if (in.getType() == BufferedImage.TYPE_INT_RGB || in.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
+        System.out.println(in.getType());
+        if (in.getType() == BufferedImage.TYPE_INT_RGB || in.getType() == BufferedImage.TYPE_BYTE_INDEXED || in.getType() == BufferedImage.TYPE_3BYTE_BGR) {
             out = new Mat(in.getHeight(), in.getWidth(), CvType.CV_8UC3);
             data = new byte[in.getWidth() * in.getHeight() * (int) out.elemSize()];
             int[] dataBuff = in.getRGB(0, 0, in.getWidth(), in.getHeight(), null, 0, in.getWidth());

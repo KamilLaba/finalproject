@@ -38,6 +38,10 @@
                 <input type="hidden" name="id" th:value="${image.Id}">
                 <button type="submit" onClick="return confirm('Convert image to grayscale?')">Grayscale</button>
             </form>
+            <form th:action="@{images/toBlackAndWhite/}" method="post">
+                <input type="hidden" name="id" th:value="${image.Id}">
+                <button type="submit" onClick="return confirm('Convert image to black and white?')">Black and white</button>
+            </form>
         </td>
     </tr>
 </table>
