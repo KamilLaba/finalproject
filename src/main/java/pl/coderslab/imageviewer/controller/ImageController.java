@@ -1,9 +1,6 @@
 package pl.coderslab.imageviewer.controller;
 
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
+import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -67,12 +64,7 @@ public class ImageController {
     public String toGrayscale(@RequestParam String id){
         try {
             Image image = imageService.findById(Integer.parseInt(id));
-            String imageBinaryString = image.getImage();
-
-            byte[] inputImage = Base64.getDecoder().decode(imageBinaryString);
-            System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(inputImage);
-            BufferedImage inputBufferedImage = ImageIO.read(byteArrayInputStream);
+            BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
 
             Mat source = bufferedImageToMat(inputBufferedImage);
             Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
@@ -83,44 +75,51 @@ public class ImageController {
             BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), BufferedImage.TYPE_BYTE_GRAY);
             outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
 
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ImageIO.write(outputImage, "png", byteArrayOutputStream);
-            byte[] bytes = byteArrayOutputStream.toByteArray();
-
-            image.setImage(bytes);
-            imageService.save(image);
+            saveImage(outputImage, image);
         } catch(Exception e){
             e.printStackTrace();
         }
         return "redirect:/images";
     }
 
-    @PostMapping("images/toBlackAndWhite")
-    public String toBlackAndWhite(@RequestParam String id){
+    @PostMapping("images/toBinary")
+    public String toBinary(@RequestParam String id){
         try {
             Image image = imageService.findById(Integer.parseInt(id));
-            String imageBinaryString = image.getImage();
-
-            byte[] inputImage = Base64.getDecoder().decode(imageBinaryString);
-            System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(inputImage);
-            BufferedImage inputBufferedImage = ImageIO.read(byteArrayInputStream);
-
-            Mat source = bufferedImageToMat(inputBufferedImage);
+            BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
             Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
+            Mat source = bufferedImageToMat(inputBufferedImage);
             Imgproc.cvtColor(source, destination, Imgproc.COLOR_RGB2GRAY);
-            //(thresh, blackAndWhiteImage) = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+            Imgproc.threshold(destination, destination, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+
             byte[] data1 = new byte[destination.rows() * destination.cols() * (int) (destination.elemSize())];
             destination.get(0, 0, data1);
             BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), BufferedImage.TYPE_BYTE_GRAY);
             outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
 
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ImageIO.write(outputImage, "png", byteArrayOutputStream);
-            byte[] bytes = byteArrayOutputStream.toByteArray();
+            saveImage(outputImage, image);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        return "redirect:/images";
+    }
 
-            image.setImage(bytes);
-            imageService.save(image);
+    @PostMapping("images/invertColors")
+    public String invertColors(@RequestParam String id){
+        try {
+            Image image = imageService.findById(Integer.parseInt(id));
+            BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
+            Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
+            Mat source = bufferedImageToMat(inputBufferedImage);
+            Mat whiteMat = new Mat(source.rows(),source.cols(), source.type(), new Scalar(255,255,255));
+            Core.subtract(whiteMat, source, destination);
+
+            byte[] data1 = new byte[destination.rows() * destination.cols() * (int) (destination.elemSize())];
+            destination.get(0, 0, data1);
+            BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), inputBufferedImage.getType());
+            outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
+
+            saveImage(outputImage, image);
         } catch(Exception e){
             e.printStackTrace();
         }
@@ -154,5 +153,35 @@ public class ImageController {
         }
         out.put(0, 0, data);
         return out;
+    }
+
+    protected BufferedImage decodeImageFromBinaryString(Image image){
+        try {
+
+            String imageBinaryString = image.getImage();
+
+            byte[] inputImage = Base64.getDecoder().decode(imageBinaryString);
+            System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(inputImage);
+            BufferedImage inputBufferedImage = ImageIO.read(byteArrayInputStream);
+            return inputBufferedImage;
+
+        } catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    protected void saveImage(BufferedImage outputImage, Image image){
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ImageIO.write(outputImage, "png", byteArrayOutputStream);
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+
+            image.setImage(bytes);
+            imageService.save(image);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }
