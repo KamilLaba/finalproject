@@ -46,6 +46,14 @@
                 <input type="hidden" name="id" th:value="${image.Id}">
                 <button type="submit" onClick="return confirm('Invert colors?')">Invert colors</button>
             </form>
+            <form th:action="@{images/sharpenImage/}" method="post">
+                <input type="hidden" name="id" th:value="${image.Id}">
+                <button type="submit" onClick="return confirm('Sharpen image?')">Sharpen image</button>
+            </form>
+            <form th:action="@{images/blurImage/}" method="post">
+                <input type="hidden" name="id" th:value="${image.Id}">
+                <button type="submit" onClick="return confirm('Blur image?')">Blur image</button>
+            </form>
         </td>
     </tr>
 </table>

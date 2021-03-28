@@ -67,13 +67,15 @@ public class ImageController {
             BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
 
             Mat source = bufferedImageToMat(inputBufferedImage);
-            Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
-            Imgproc.cvtColor(source, destination, Imgproc.COLOR_RGB2GRAY);
+            Mat destination = new Mat();
 
-            byte[] data1 = new byte[destination.rows() * destination.cols() * (int) (destination.elemSize())];
-            destination.get(0, 0, data1);
-            BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), BufferedImage.TYPE_BYTE_GRAY);
-            outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
+            if(source.channels() <= 1){
+                destination = source;
+            } else{
+                Imgproc.cvtColor(source, destination, Imgproc.COLOR_RGB2GRAY);
+            }
+
+            BufferedImage outputImage = matToBufferedImage(destination);
 
             saveImage(outputImage, image);
         } catch(Exception e){
@@ -87,15 +89,18 @@ public class ImageController {
         try {
             Image image = imageService.findById(Integer.parseInt(id));
             BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
-            Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
+
             Mat source = bufferedImageToMat(inputBufferedImage);
-            Imgproc.cvtColor(source, destination, Imgproc.COLOR_RGB2GRAY);
+            Mat destination = new Mat();
+            if(source.channels() <= 1){
+                destination = source;
+            } else{
+                Imgproc.cvtColor(source, destination, Imgproc.COLOR_RGB2GRAY);
+            }
+
             Imgproc.threshold(destination, destination, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
 
-            byte[] data1 = new byte[destination.rows() * destination.cols() * (int) (destination.elemSize())];
-            destination.get(0, 0, data1);
-            BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), BufferedImage.TYPE_BYTE_GRAY);
-            outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
+            BufferedImage outputImage = matToBufferedImage(destination);
 
             saveImage(outputImage, image);
         } catch(Exception e){
@@ -109,15 +114,58 @@ public class ImageController {
         try {
             Image image = imageService.findById(Integer.parseInt(id));
             BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
+
             Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
             Mat source = bufferedImageToMat(inputBufferedImage);
             Mat whiteMat = new Mat(source.rows(),source.cols(), source.type(), new Scalar(255,255,255));
             Core.subtract(whiteMat, source, destination);
 
-            byte[] data1 = new byte[destination.rows() * destination.cols() * (int) (destination.elemSize())];
-            destination.get(0, 0, data1);
-            BufferedImage outputImage = new BufferedImage(destination.cols(), destination.rows(), inputBufferedImage.getType());
-            outputImage.getRaster().setDataElements(0, 0, destination.cols(), destination.rows(), data1);
+            BufferedImage outputImage = matToBufferedImage(destination);
+
+            saveImage(outputImage, image);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        return "redirect:/images";
+    }
+
+    @PostMapping("images/sharpenImage")
+    public String sharpenImage(@RequestParam String id){
+        try {
+            Image image = imageService.findById(Integer.parseInt(id));
+            BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
+
+            Mat source = bufferedImageToMat(inputBufferedImage);
+            Mat destination = new Mat(source.rows(), source.cols(), source.type());
+
+            for(int i = 0; i <=1; i++) {
+                Imgproc.GaussianBlur(source, destination, new Size(0, 0), 10);
+                Core.addWeighted(source, 1.5, destination, -0.5, 0, destination);
+            }
+
+            BufferedImage outputImage = matToBufferedImage(destination);
+
+            saveImage(outputImage, image);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        return "redirect:/images";
+    }
+
+    @PostMapping("images/blurImage")
+    public String blurImage(@RequestParam String id){
+        try {
+            Image image = imageService.findById(Integer.parseInt(id));
+            BufferedImage inputBufferedImage = decodeImageFromBinaryString(image);
+
+            Mat destination = new Mat(inputBufferedImage.getHeight(), inputBufferedImage.getWidth(), inputBufferedImage.getType());
+            Mat source = bufferedImageToMat(inputBufferedImage);
+
+            for(int i = 0; i <=1; i++) {
+                Imgproc.blur(source, destination, new Size(3.0, 3.0));
+            }
+
+            BufferedImage outputImage = matToBufferedImage(destination);
 
             saveImage(outputImage, image);
         } catch(Exception e){
@@ -153,6 +201,39 @@ public class ImageController {
         }
         out.put(0, 0, data);
         return out;
+    }
+
+    public static BufferedImage matToBufferedImage(Mat matrix)
+    {
+        if ( matrix != null ) {
+            int cols = matrix.cols();
+            int rows = matrix.rows();
+            int elemSize = (int) matrix.elemSize();
+            byte[] data = new byte[cols * rows * elemSize];
+            int type;
+            matrix.get(0, 0, data);
+            switch (matrix.channels()) {
+                case 1:
+                    type = BufferedImage.TYPE_BYTE_GRAY;
+                    break;
+                case 3:
+                    type = BufferedImage.TYPE_3BYTE_BGR;
+                    byte b;
+                    for (int i = 0; i < data.length; i = i + 3) {
+                        b = data[i];
+                        data[i] = data[i + 2];
+                        data[i + 2] = b;
+                    }
+                    break;
+                default:
+                    return null;
+            }
+            BufferedImage bufferedImage = new BufferedImage(cols, rows, type);
+
+            bufferedImage.getRaster().setDataElements(0, 0, cols, rows, data);
+
+            return bufferedImage;
+        } else return null;
     }
 
     protected BufferedImage decodeImageFromBinaryString(Image image){
