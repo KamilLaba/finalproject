@@ -25,6 +25,8 @@ public class Image {
     @JoinColumn(name = "RoleId", referencedColumnName = "Id")
     private Role role;
 
+    @Transient
+    public float[][] histogramData;
 
     public Image(){
     }

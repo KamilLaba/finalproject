@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <link th:href="@{/styles/main.css}" rel="stylesheet" />
+    <script type="text/javascript" th:src="@{/js/echarts.js}"></script>
+    <script type="text/javascript" th:src="@{/js/jquery-3.6.0.js}"></script>
     <title>Images</title>
 </head>
 <body>
@@ -20,12 +22,85 @@
         <th>Title</th>
         <th>Description</th>
         <th>Image</th>
+        <th>Histogram</th>
         <th>Permissions needed</th>
     </tr>
     <tr th:each = "image: ${images}">
         <td th:text="${image.title}"></td>
         <td th:text="${image.description}"></td>
         <td><img th:src="${'data:image/jpeg;charset=utf-8;base64,' + image.image}" alt=""></td>
+        <td>
+            <div th:id="'histogram' + ${image.Id}" style="width: 600px;height:400px;"></div>
+            <script type="text/javascript" th:inline="javascript">
+            var colorHistogram = echarts.init(document.getElementById("histogram" + [[${image.Id}]] ));
+
+            var blue=[[${image.histogramData[0]}]];
+            var green=[[${image.histogramData[1]}]];
+            var red=[[${image.histogramData[2]}]];
+
+            compareArrays = (a, b) =>
+              a.length === b.length &&
+              a.every((v, i) => v === b[i]);
+
+            if(compareArrays(blue,red))
+            {
+            var option = {
+                    title: {
+                                     Text: 'Gray Level Histogram'
+                    },
+                    tooltip: {},
+                    legend: {
+                    },
+                    xAxis: {
+                        type: 'category'
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [{
+                        name: 'Intensity',
+                        type: 'bar',
+                        itemStyle: {color: 'gray'},
+                        data: blue
+                    }]
+                };
+            } else {
+                  var option = {
+                    title: {
+                                     Text: 'Color Histogram'
+                    },
+                    tooltip: {},
+                    legend: {
+                    },
+                    xAxis: {
+                        type: 'category'
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [{
+                        name: 'Blue',
+                        type: 'bar',
+                        itemStyle: {color: 'blue'},
+                        data: blue
+                    },
+                    {
+                        name: 'Red',
+                        type: 'bar',
+                        itemStyle: {color: 'red'},
+                        data: red
+                    },
+                    {
+                        name: 'Green',
+                        type: 'bar',
+                        itemStyle: {color: 'green'},
+                        data: green
+                    }]
+                };
+            }
+            colorHistogram.setOption(option);
+        </script>
+        </td>
         <td th:text="${image.role.role}"></td>
         <td>
             <form th:action="@{images/deleteImage/}" method="post">

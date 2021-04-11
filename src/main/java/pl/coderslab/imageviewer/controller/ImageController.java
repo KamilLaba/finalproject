@@ -48,6 +48,10 @@ public class ImageController {
             int userRoleId = (Integer) session.getAttribute("roleId");
             images = (List<Image>)imageService.findAll().stream().filter(image -> image.getRole().getId() == userRoleId).collect(Collectors.toList());
         }
+        for (Image image : images) {
+            float[][] test = calculateHistogram(bufferedImageToMat(decodeImageFromBinaryString(image)));
+            image.histogramData = calculateHistogram(bufferedImageToMat(decodeImageFromBinaryString(image)));
+        }
 
         model.addAttribute("images", images);
 
@@ -264,5 +268,47 @@ public class ImageController {
         } catch(Exception e){
             e.printStackTrace();
         }
+    }
+
+    protected float[][] calculateHistogram(Mat src){
+        List<Mat> bgrPlanes = new ArrayList<>();
+        Core.split(src, bgrPlanes);
+        int histSize = 256;
+        float[] range = {0, 256}; //the upper boundary is exclusive
+        MatOfFloat histRange = new MatOfFloat(range);
+        boolean accumulate = false;
+        Mat bHist = new Mat(), gHist = new Mat(), rHist = new Mat();
+        Imgproc.calcHist(bgrPlanes, new MatOfInt(0), new Mat(), bHist, new MatOfInt(histSize), histRange, accumulate);
+
+        float[] bHistData;
+        float[] gHistData;
+        float[] rHistData;
+        if(src.channels() > 1) {
+            Imgproc.calcHist(bgrPlanes, new MatOfInt(1), new Mat(), gHist, new MatOfInt(histSize), histRange, accumulate);
+            Imgproc.calcHist(bgrPlanes, new MatOfInt(2), new Mat(), rHist, new MatOfInt(histSize), histRange, accumulate);
+
+            //Mat histImage = new Mat( histH, histW, CvType.CV_8UC3, new Scalar( 0,0,0) );
+            //Core.normalize(bHist, bHist, 0, histImage.rows(), Core.NORM_MINMAX);
+            //Core.normalize(gHist, gHist, 0, histImage.rows(), Core.NORM_MINMAX);
+            //Core.normalize(rHist, rHist, 0, histImage.rows(), Core.NORM_MINMAX);
+            bHistData = new float[(int) (bHist.total() * bHist.channels())];
+            bHist.get(0, 0, bHistData);
+            gHistData = new float[(int) (gHist.total() * gHist.channels())];
+            gHist.get(0, 0, gHistData);
+            rHistData = new float[(int) (rHist.total() * rHist.channels())];
+            rHist.get(0, 0, rHistData);
+        } else {
+            bHistData = new float[(int) (bHist.total() * bHist.channels())];
+            bHist.get(0, 0, bHistData);
+            gHistData = bHistData;
+            rHistData = bHistData;
+        }
+
+        float[][] histogramData = new float[3][];
+        histogramData[0] = bHistData;
+        histogramData[1] = gHistData;
+        histogramData[2] = rHistData;
+
+        return histogramData;
     }
 }
